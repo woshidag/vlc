@@ -1,0 +1,3 @@
+<launch>
+	<node pkg="vlc" type="vlcplayer.py" name="vlc_player"  output="screen">	</node>
+</launch>
