@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <package>
   <name>vlc</name>
-  <version>0.0.0</version>
+  <version>0.0.1</version>
   <description>Utilities for controlling VLC from ROS</description>
 
-  <maintainer email="lazewatd@engr.oregonstate.edu">Dan Lazewatsky</maintainer>
+  <maintainer email="woshidag@yeah.net">yujikang</maintainer>
 
 
   <license>BSD</license>

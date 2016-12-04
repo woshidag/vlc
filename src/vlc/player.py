@@ -27,8 +27,8 @@ class VLCController(object):
         self._paused = False
         self._muted = False
         self._time = rospy.Duration(0)
-        self.time_pub = rospy.Publisher('playback_time', Duration)
-        self.report_pub = rospy.Publisher('command_report', CommandReport)
+        self.time_pub = rospy.Publisher('playback_time', Duration, queue_size=10)
+        self.report_pub = rospy.Publisher('command_report', CommandReport, queue_size=10)
         self._http = use_http
         self._process = None
         self._tic_timer = None
