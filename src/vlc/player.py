@@ -34,6 +34,7 @@ class VLCController(object):
         self._tic_timer = None
         self.condition = ''
         self.MAX_VOL = 450
+        self._loop = True
 
     def _tick(self, *args):
         self._update_state()
@@ -100,6 +101,11 @@ class VLCController(object):
         return
 
     @abc.abstractmethod
+    def loop(self, *args):
+        '''loop'''
+        return
+
+    @abc.abstractmethod
     def stop(self, *args):
         '''Stop playback'''
         return
@@ -113,7 +119,9 @@ class VLCController(object):
             ['vlc'],
             # shlex.split('--extraintf http' if self._http else ''),
             shlex.split('--extraintf http --http-password=ROS' if self._http else ''),
-            ['--play-and-pause'],
+            # ['--play-and-pause'],
+            ['--no-video-title-show'],
+            ['--repeat'],
             [vid_path],
         ], [])
         self.condition = rospy.get_param('condition', '')
@@ -124,6 +132,7 @@ class VLCController(object):
         vid_path = msg.path
         self._paused = False
         self._muted = False
+        self._loop = False
         self._length = -1
         self._time = rospy.Duration(0)
 
@@ -165,11 +174,12 @@ class HttpController(VLCController):
             except requests.ConnectionError, AttributeError:
                 rospy.sleep(0.01)
 
-    def _send_command(self, command, val=''):
+    def _send_command(self, command, val='', play_id=0):
+        # print play_id
         try:
-            url = self._url + '?' + urllib.urlencode(dict(command=command, val=val))
+            url = self._url + '?' + urllib.urlencode(dict(command=command, val=val, id=play_id))
             resp = requests.get(url, auth=self._auth).content
-            self.state = objectify.fromstring(resp)
+            self.state = objectify.fromstring(resp)            
             self._time = max(rospy.Duration(self.state.time), rospy.Duration(0))
             self._length = self.state.length
         except AttributeError:
@@ -192,12 +202,13 @@ class HttpController(VLCController):
             self._time,
             self.state.volume,
             self.state.state == 'paused',
-            self._muted
+            self._muted,
+            self._loop
         )
 
     def play(self, req):
         self._report('play', -1, req._connection_header['callerid'])
-        self._send_command('pl_play')
+        self._send_command('pl_play', 0, int(req.play_id))
         return self.get_state()
 
     def pause(self, req):
@@ -258,6 +269,20 @@ class HttpController(VLCController):
         self._send_command('volume', '-75')
         self._vol = self.state.volume
         return self.get_state()
+
+    def loop(self, req):
+        '''loop'''
+        if self._loop:
+            self._report('unloop', -1, req._connection_header['callerid'])
+            self._send_command('pl_loop')
+            self._loop = False
+        else:
+            self._report('loop', -1, req._connection_header['callerid'])
+            self._send_command('pl_loop')
+            self._loop = True
+        return self.get_state()
+
+
 
     def toggle_fullscreen(self, *args):
         '''Toggles fullscreen'''
@@ -606,5 +631,7 @@ if __name__ == '__main__':
     video_play_service = rospy.Service('start_video', StartVideo, vlc.start_vlc)
     vol_up_service = rospy.Service('vol_up', VolUp, vlc.vol_up)
     vol_dn_service = rospy.Service('vol_dn', VolDn, vlc.vol_dn)
+
+    loop_service = rospy.Service('loop', Loop, vlc.loop)
 
     rospy.spin()

@@ -30,6 +30,7 @@ add_service_files(
    VolDn.srv
    SetVol.srv
    Seek.srv
+   Loop.srv
 )
 
 catkin_python_setup()

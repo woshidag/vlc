@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from vlc.player import HttpController, CtypesController
 from vlc.srv import Play, Pause, Stop, Forward10, Back10, MuteToggle,\
-    FullscreenToggle, StartVideo, VolUp, VolDn, SetVol, Seek
+    FullscreenToggle, StartVideo, VolUp, VolDn, SetVol, Seek, Loop
 import rospy
 
 if __name__ == '__main__':
@@ -23,5 +23,7 @@ if __name__ == '__main__':
     vol_dn_service = rospy.Service('vol_dn', VolDn, vlc.vol_dn)
     set_vol_service = rospy.Service('set_vol', SetVol, vlc.set_vol)
     seek_service = rospy.Service('seek', Seek, vlc.seek)
+
+    loop_service = rospy.Service('loop', Loop, vlc.loop)
 
     rospy.spin()
