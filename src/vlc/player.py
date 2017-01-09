@@ -19,6 +19,7 @@ from vlc import libvlc
 from multiprocessing import Process, Queue, Manager
 import os
 import sys
+import json
 
 class VLCController(object):
     __metaclass__ = abc.ABCMeta
@@ -161,6 +162,8 @@ class HttpController(VLCController):
         self._url = 'http://localhost:8080/requests/status.xml'
         self.status = None
         self._auth = HTTPBasicAuth('', 'ROS')
+        self._item_mapping = None
+        # todo mapping name and id
 
     def _wait_for_vlc(self):
         ready = False
@@ -174,6 +177,23 @@ class HttpController(VLCController):
             except requests.ConnectionError, AttributeError:
                 rospy.sleep(0.01)
 
+    def _playlist(self):
+        try:
+            url = "http://localhost:8080/requests/playlist.json"
+            resp = requests.get(url, auth=self._auth).content
+            result = json.loads(resp)
+            playlist = result["children"][0]["children"]
+            item_mapping = {}
+            for item in playlist:
+	            item_mapping[item["name"]] = item["id"]
+
+            return item_mapping
+        except AttributeError:
+            rospy.logwarn("Couldn't get player time")
+        except urllib2.URLError:
+            rospy.logwarn("Couldn't get player time (HTTP interface doesn't seem to be ready")
+        return self.state
+        # pass
     def _send_command(self, command, val='', play_id=0):
         # print play_id
         try:
@@ -207,8 +227,16 @@ class HttpController(VLCController):
         )
 
     def play(self, req):
+        print req
+        if not self._item_mapping:
+            self._item_mapping = self._playlist()
+
+        play_id = None
+        if self._item_mapping:
+            play_id = self._item_mapping[req.filename]
+
         self._report('play', -1, req._connection_header['callerid'])
-        self._send_command('pl_play', 0, int(req.play_id))
+        self._send_command('pl_play', 0, play_id)
         return self.get_state()
 
     def pause(self, req):

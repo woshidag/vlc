@@ -1,4 +1,5 @@
 <launch>
 	<node pkg="vlc" type="vlcplayer.py" name="vlc_player"  output="screen">	</node>
 	<node pkg="vlc" type="startvideo.py" name="start_video"  output="screen">	</node>
+	<node pkg="vlc" type="addmimic.py" name="add_mimic"  output="screen">	</node>
 </launch>
